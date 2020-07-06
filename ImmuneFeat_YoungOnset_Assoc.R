@@ -98,17 +98,17 @@ for (cancer in unique(clin_merge_subtype_avail_complete$acronym)) {
    # if (immune_feat == "Lymphocyte_Infiltration_Signature_Score" | immune_feat == "Wound_Healing" | immune_feat == "Proliferation" |
    #     immune_feat == "Macrophage_Regulation" | immune_feat == "IFN_gamma_Response" | immune_feat == "TGF_beta_Response") {
     
-     if (immune_feat == "Macrophages" | immune_feat == "Macrophages_M1" | immune_feat == "Macrophages_M2" |
-         immune_feat == "Dendritic_Cells" | immune_feat == "B_Cells_Naive" | immune_feat == "T_Cells_CD4_Naive" |
-         immune_feat == "T_Cells_CD8" | immune_feat == "NK_Cells_Activated" | immune_feat == "NK_Cells_Resting" |
-         immune_feat == "T_Cells_Regulatory_Tregs") {
+   # if (immune_feat == "Macrophages" | immune_feat == "Macrophages_M1" | immune_feat == "Macrophages_M2" |
+   #     immune_feat == "Dendritic_Cells" | immune_feat == "B_Cells_Naive" | immune_feat == "T_Cells_CD4_Naive" |
+   #     immune_feat == "T_Cells_CD8" | immune_feat == "NK_Cells_Activated" | immune_feat == "NK_Cells_Resting" |
+   #     immune_feat == "T_Cells_Regulatory_Tregs") {
     
     # if (immune_feat == "Indel_Neoantigens" | immune_feat == "SNV_Neoantigens") {
     #   if (cancer == "SKCM" & immune_feat == "SNV_Neoantigens") {next}
     #   if (cancer == "SKCM" & immune_feat == "Indel_Neoantigens") {next}
     #   if (cancer == "OV" & immune_feat == "Indel_Neoantigens") {next}
     
-    # if (immune_feat == "Silent_Mutation_Rate" | immune_feat == "Nonsilent_Mutation_Rate") {
+    if (immune_feat == "Silent_Mutation_Rate" | immune_feat == "Nonsilent_Mutation_Rate") {
        
       immune_feat_df_current = select(immune_feat_df, bcr_patient_barcode, immune_feat)
       immune_feat_df_current = na.omit(immune_feat_df_current)
@@ -140,18 +140,6 @@ for (cancer in unique(clin_merge_subtype_avail_complete$acronym)) {
  }
 }
 
-
-##### Compile and store results #####
-# compile linear result
-# tt = do.call(rbind,immune_results_list)
-# colnames(tt) = c("cancer","immune_feature","y","y_type","x","degrees_freedom","deviance","residual_degrees_freedom","residual_deviance",
-#                  "F", "Pr_F", "coefficient","covariates");
-# # multiple-testing correction and sort by significance
-# tt$FDR = p.adjust(tt[,"Pr_F"], method="fdr") 
-# tt=tt[order(tt$Pr_F, decreasing=FALSE),]
-# tn = "out/immune_features_onsetAge_assoc.txt"
-# write.table(tt, quote=F, sep="\t", file = tn, row.names = F)
-
 # compile binary result
 tt = do.call(rbind,immune_results_list_binary)
 colnames(tt) = c("cancer","immune_feature","y","y_type","x","degrees_freedom","deviance","residual_degrees_freedom","residual_deviance",
@@ -162,7 +150,7 @@ tt=tt[order(tt$Pr_F, decreasing=FALSE),]
 #tn = "out/immune_features_onsetAgeBinary_assoc.txt"
 #tn = "out/Th_Cells_onsetAgeBinary_assoc.txt"
 #tn = "out/IGS_onsetAgeBinary_assoc.txt"
-tn = "out/IIC_onsetAgeBinary_assoc.txt"
+#tn = "out/IIC_onsetAgeBinary_assoc.txt"
 #tn = "out/Neoantigens_onsetAgeBinary_assoc.txt"
-#tn = "out/Mut_Rate_onsetAgeBinary_assoc.txt"
+tn = "out/Mut_Rate_onsetAgeBinary_assoc.txt"
 write.table(tt, quote=F, sep="\t", file = tn, row.names = F)
