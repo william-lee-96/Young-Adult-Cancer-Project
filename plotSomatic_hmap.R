@@ -9,7 +9,7 @@ source("../global_aes_out.R")
 
 ### MAIN ###
 
-### MC3 mutation call file (only include the likely driver for the first-ass analysis) ###
+### MC3 mutation call file (only include the likely driver for the first-pass analysis) ###
 somatic_likelyfunctional_driver_f = "~/Box/Huang_lab/Huang_lab_data/TCGA_PanCanAtlas_2018/MC3_Ellrott_CellSys2018/mc3.v0.2.8.PUBLIC.maf.gene_vclass_HGVSp_sample_likelyDriver.tsv"
 somatic_likelyfunctional_driver = read.table(header=T, quote = "", sep="\t", file = somatic_likelyfunctional_driver_f, stringsAsFactors=FALSE)
 
