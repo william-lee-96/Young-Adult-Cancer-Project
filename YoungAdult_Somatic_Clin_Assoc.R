@@ -344,6 +344,21 @@ for (cancer in unique(clin_merge_subtype_avail_complete$acronym)){
   }
 }
 
+# get dfs for actionable geneVar analysis later (need duplicates) #
+clin_somatic_therapeutics_all = clin_somatic_therapeutics
+clin_somatic_therapeutics_all = clin_somatic_therapeutics_all[clin_somatic_therapeutics_all$acronym=="BRCA" |
+clin_somatic_therapeutics_all$acronym=="CESC" | clin_somatic_therapeutics_all$acronym=="COAD" |
+clin_somatic_therapeutics_all$acronym=="HNSC" | clin_somatic_therapeutics_all$acronym=="SKCM" |
+clin_somatic_therapeutics_all$acronym=="THCA" | clin_somatic_therapeutics_all$acronym=="UCEC",]
+
+clin_somatic_actionable = clin_somatic_therapeutics
+clin_somatic_actionable[clin_somatic_actionable == ""] <- NA
+clin_somatic_actionable = clin_somatic_actionable[!is.na(clin_somatic_actionable$ab_drug),]
+clin_somatic_actionable = clin_somatic_actionable[clin_somatic_actionable$acronym=="BRCA" |
+clin_somatic_actionable$acronym=="CESC" | clin_somatic_actionable$acronym=="COAD" |
+clin_somatic_actionable$acronym=="HNSC" | clin_somatic_actionable$acronym=="SKCM" |
+clin_somatic_actionable$acronym=="THCA" | clin_somatic_actionable$acronym=="UCEC",]
+
 # RESPONSIVE VARIANTS #
 # clin_somatic_therapeutics: 17523 obs. before removing duplicates
 
@@ -494,8 +509,8 @@ clin_somatic_therapeutics_ggplot_rmNone$tempCol = NULL
 
 # Responsive variants #
 clin_somatic_therapeutics_ggplot_rmNone$geneVar = factor(clin_somatic_therapeutics_ggplot_rmNone$geneVar, levels=c(
-  "BRAF:V600E", "PIK3CA:H1047R", "PIK3CA:E545K", "PIK3CA:E542K", "KRAS:G12V", "KRAS:G13D",
-  "AKT1:E17K", "KRAS:G12C", "CTNNB1:S37C", "ERBB3:V104M", "IDH1:R132C", "other"))
+"BRAF:V600E", "PIK3CA:H1047R", "PIK3CA:E545K", "PIK3CA:E542K", "KRAS:G12V", "KRAS:G13D",
+"AKT1:E17K", "KRAS:G12C", "CTNNB1:S37C", "ERBB3:V104M", "IDH1:R132C", "other"))
 
 # Resistant variants #
 # clin_somatic_therapeutics_ggplot_rmNone$geneVar = factor(clin_somatic_therapeutics_ggplot_rmNone$geneVar, levels=c(
@@ -611,74 +626,180 @@ p
 fn = "out/YoungAdult_Somatic_ClinResist_BarplotBinary_Count.pdf"
 ggsave(fn, w=7.5, h=3.5, useDingbats=FALSE)
 
-################################ FISHER'S EXACT DRUG ANALYSIS ################################ 
+################################ RESPONSIVE SUMMARY TABLES ################################
 
-fisher_abdrug_df <- data.frame(matrix(ncol = 3, nrow = 0))
-colnames(fisher_abdrug_df) <- c("cancer", "ab_drug", "p_value")
+library(kableExtra)
+
+ya_somatic_summ_df <- data.frame(matrix(ncol = 7, nrow = 0))
+lo_somatic_summ_df <- data.frame(matrix(ncol = 7, nrow = 0))
 
 for (cancer in unique(clin_somatic_therapeutics_ggplot$acronym)) {
   
-  current_cancer_df = clin_somatic_therapeutics_ggplot[clin_somatic_therapeutics_ggplot$acronym==cancer,]
+  temp = clin_somatic_therapeutics_ggplot[clin_somatic_therapeutics_ggplot$acronym==cancer,]
   
-  for (abdrug in unique(current_cancer_df$ab_drug)) {
-    
-    num_current_abdrug_ltr = sum(current_cancer_df$age_binary==FALSE & current_cancer_df$ab_drug==abdrug)
-    num_current_abdrug_yng = sum(current_cancer_df$age_binary==TRUE & current_cancer_df$ab_drug==abdrug)
-    
-    num_not_current_abdrug_ltr = sum(current_cancer_df$age_binary==FALSE & current_cancer_df$ab_drug!=abdrug)
-    num_not_current_abdrug_yng = sum(current_cancer_df$age_binary==TRUE & current_cancer_df$ab_drug!=abdrug)
-    
-    yng_set = c(num_not_current_abdrug_yng, num_current_abdrug_yng)
-    late_set = c(num_not_current_abdrug_ltr, num_current_abdrug_ltr)
-    
-    abdrug_fisher = cbind(yng_set, late_set)
-    
-    abdrug_fisher_pval = fisher.test(abdrug_fisher)$p.val
-    
-    temp = cbind(cancer, abdrug, abdrug_fisher_pval)
-    colnames(temp) <- c("cancer", "ab_drug", "p_value")
-    
-    fisher_abdrug_df = rbind(fisher_abdrug_df, temp)
-    
-  }
+  ya_sample_size = sum(temp$age_binary==TRUE)
+  lo_sample_size = sum(temp$age_binary==FALSE)
+  
+  ya_AonLab = sum(temp$ab_drug=="A on-label" & temp$age_binary==TRUE)
+  ya_AonLab_perc = round((ya_AonLab/ya_sample_size)*100, digits=1)
+  
+  ya_AoffLab = sum(temp$ab_drug=="A off-label" & temp$age_binary==TRUE)
+  ya_AoffLab_perc = round((ya_AoffLab/ya_sample_size)*100, digits=1)
+  
+  ya_BonLab = sum(temp$ab_drug=="B on-label" & temp$age_binary==TRUE)
+  ya_BonLab_perc = round((ya_BonLab/ya_sample_size)*100, digits=1)
+  
+  ya_BoffLab = sum(temp$ab_drug=="B off-label" & temp$age_binary==TRUE)
+  ya_BoffLab_perc = round((ya_BoffLab/ya_sample_size)*100, digits=1)
+  
+  ya_None = sum(temp$ab_drug=="None" & temp$age_binary==TRUE)
+  ya_None_perc = round((ya_None/ya_sample_size)*100, digits=1)
+  
+  lo_AonLab = sum(temp$ab_drug=="A on-label" & temp$age_binary==FALSE)
+  lo_AonLab_perc = round((lo_AonLab/lo_sample_size)*100, digits=1)
+  
+  lo_AoffLab = sum(temp$ab_drug=="A off-label" & temp$age_binary==FALSE)
+  lo_AoffLab_perc = round((lo_AoffLab/lo_sample_size)*100, digits=1)
+  
+  lo_BonLab = sum(temp$ab_drug=="B on-label" & temp$age_binary==FALSE)
+  lo_BonLab_perc = round((lo_BonLab/lo_sample_size)*100, digits=1)
+  
+  lo_BoffLab = sum(temp$ab_drug=="B off-label" & temp$age_binary==FALSE)
+  lo_BoffLab_perc = round((lo_BoffLab/lo_sample_size)*100, digits=1)
+  
+  lo_None = sum(temp$ab_drug=="None" & temp$age_binary==FALSE)
+  lo_None_perc = round((lo_None/lo_sample_size)*100, digits=1)
+  
+  ya_row = cbind(cancer, ya_sample_size, ya_AonLab_perc, ya_AoffLab_perc, ya_BonLab_perc, ya_BoffLab_perc, ya_None_perc)
+  lo_row = cbind(cancer, lo_sample_size, lo_AonLab_perc, lo_AoffLab_perc, lo_BonLab_perc, lo_BoffLab_perc, lo_None_perc)
+   
+  ya_somatic_summ_df <- rbind(ya_somatic_summ_df, ya_row)
+  lo_somatic_summ_df <- rbind(lo_somatic_summ_df, lo_row)
+  
 }
 
-fisher_abdrug_df$p_value = as.numeric(as.character(fisher_abdrug_df$p_value))
-fisher_abdrug_df$FDR = p.adjust(fisher_abdrug_df[,"p_value"], method="fdr") 
-fisher_abdrug_df=fisher_abdrug_df[order(fisher_abdrug_df$p_value, decreasing=FALSE),]
+##############################################################################################################################
 
-################################ FISHER'S EXACT GENEVAR ANALYSIS ################################
+ya_somatic_summ_df$cancer = as.character(ya_somatic_summ_df$cancer)
+ya_somatic_summ_df = ya_somatic_summ_df[order(ya_somatic_summ_df$cancer),]
+rownames(ya_somatic_summ_df) <- ya_somatic_summ_df$cancer
+ya_somatic_summ_df$cancer = NULL
 
-fisher_genevar_df <- data.frame(matrix(ncol = 3, nrow = 0))
-colnames(fisher_genevar_df) <- c("cancer", "genevar", "p_value")
+colnames(ya_somatic_summ_df) <- c("Young adult cases","% A on-label","% A off-label","% B on-label","% B off-label", "% None")
 
-for (cancer in unique(clin_somatic_therapeutics_ggplot_rmNone$acronym)) {
-  
-  current_cancer_df = clin_somatic_therapeutics_ggplot_rmNone[clin_somatic_therapeutics_ggplot_rmNone$acronym==cancer,]
-  
-  for (genevar in unique(current_cancer_df$geneVar)) {
-    
-    num_current_genevar_ltr = sum(current_cancer_df$age_binary==FALSE & current_cancer_df$geneVar==genevar)
-    num_current_genevar_yng = sum(current_cancer_df$age_binary==TRUE & current_cancer_df$geneVar==genevar)
-    
-    num_not_current_genevar_ltr = sum(current_cancer_df$age_binary==FALSE & current_cancer_df$geneVar!=genevar)
-    num_not_current_genevar_yng = sum(current_cancer_df$age_binary==TRUE & current_cancer_df$geneVar!=genevar)
-    
-    yng_set = c(num_not_current_genevar_yng, num_current_genevar_yng)
-    late_set = c(num_not_current_genevar_ltr, num_current_genevar_ltr)
-    
-    genevar_fisher = cbind(yng_set, late_set)
-    
-    genevar_fisher_pval = fisher.test(genevar_fisher)$p.val
-    
-    temp = cbind(cancer, genevar, genevar_fisher_pval)
-    colnames(temp) <- c("cancer", "geneVar", "p_value")
-    
-    fisher_genevar_df = rbind(fisher_genevar_df, temp)
-    
-  }
+young_adult_table = kable(ya_somatic_summ_df,"html",align="l") %>% kable_styling("striped",full_width = FALSE)
+
+young_adult_table
+
+##############################################################################################################################
+
+lo_somatic_summ_df$cancer = as.character(lo_somatic_summ_df$cancer)
+lo_somatic_summ_df = lo_somatic_summ_df[order(lo_somatic_summ_df$cancer),]
+rownames(lo_somatic_summ_df) <- lo_somatic_summ_df$cancer
+lo_somatic_summ_df$cancer = NULL
+
+colnames(lo_somatic_summ_df) <- c("Later onset cases","% A on-label","% A off-label","% B on-label","% B off-label", "% None")
+
+later_onset_table = kable(lo_somatic_summ_df,"html",align="l") %>% kable_styling("striped",full_width = FALSE)
+
+later_onset_table
+
+################################ RESPONSIVE GENEVAR TABLES ################################
+
+geneVar_list = list(); gvCount_list = list()
+
+for (gv in unique(clin_somatic_actionable$geneVar)) {
+  geneVar_list = append(geneVar_list, gv)
+  gvCount_list = append(gvCount_list, sum(clin_somatic_actionable$geneVar==gv))
 }
 
-fisher_genevar_df$p_value = as.numeric(as.character(fisher_genevar_df$p_value))
-fisher_genevar_df$FDR = p.adjust(fisher_genevar_df[,"p_value"], method="fdr") 
-fisher_genevar_df=fisher_genevar_df[order(fisher_genevar_df$p_value, decreasing=FALSE),]
+geneVar_vec <- data.frame(matrix(unlist(geneVar_list),byrow=T),stringsAsFactors=FALSE)
+gvCount_vec <- data.frame(matrix(unlist(gvCount_list),byrow=T),stringsAsFactors=FALSE)
+
+temp = cbind(geneVar_vec, gvCount_vec)
+colnames(temp)[1] = "geneVar"
+colnames(temp)[2] = "gvCount"
+temp = temp[order(temp$gvCount, decreasing=T),]
+temp = temp[1:10,]
+
+###############################################
+
+ya_summ_geneVar_df <- data.frame(matrix(ncol = 12, nrow = 0))
+lo_summ_geneVar_df <- data.frame(matrix(ncol = 12, nrow = 0))
+
+young_adult_n = data.frame(matrix(ncol = 1, nrow = 0))
+later_onset_n = data.frame(matrix(ncol = 1, nrow = 0))
+
+gene_evnt_vec = c("BRAF:V600E", "PIK3CA:H1047R", "PIK3CA:E545K", "PIK3CA:E542K", "KRAS:G12V",
+                  "AKT1:E17K", "KRAS:G13D", "KRAS:G12C", "IDH1:R132C", "ERBB3:V104M")
+
+for (cancer in unique(clin_somatic_therapeutics_all$acronym)) {
+  
+  current_cancer_df = clin_somatic_therapeutics_all[clin_somatic_therapeutics_all$acronym==cancer,]
+  
+  unique_cases = current_cancer_df[!duplicated(current_cancer_df$bcr_patient_barcode),]
+  ya_sample_size = sum(unique_cases$age_binary==TRUE)
+  lo_sample_size = sum(unique_cases$age_binary==FALSE)
+  
+  ya_geneVar_row <- data.frame(matrix(ncol = 0, nrow = 1))
+  lo_geneVar_row <- data.frame(matrix(ncol = 0, nrow = 1))
+  
+  for (geneVar in gene_evnt_vec) {
+    
+    num_current_geneVar_yng = sum(current_cancer_df$age_binary==TRUE & current_cancer_df$geneVar==geneVar)
+    num_current_geneVar_ltr = sum(current_cancer_df$age_binary==FALSE & current_cancer_df$geneVar==geneVar)
+    
+    ya_current_geneVar_perc = round((num_current_geneVar_yng/ya_sample_size)*100, digits=1)
+    lo_current_geneVar_perc = round((num_current_geneVar_ltr/lo_sample_size)*100, digits=1)
+    
+    ya_geneVar_row = cbind(ya_geneVar_row, ya_current_geneVar_perc)
+    lo_geneVar_row = cbind(lo_geneVar_row, lo_current_geneVar_perc)
+    
+  }
+  
+  young_adult_n = rbind(young_adult_n, ya_sample_size)
+  later_onset_n = rbind(later_onset_n, lo_sample_size)
+  
+  ya_geneVar_row = cbind(ya_geneVar_row, cancer)
+  lo_geneVar_row = cbind(lo_geneVar_row, cancer)
+  
+  ya_summ_geneVar_df <- rbind(ya_summ_geneVar_df, ya_geneVar_row)
+  lo_summ_geneVar_df <- rbind(lo_summ_geneVar_df, lo_geneVar_row)
+  
+}
+
+##############################################################################################################################
+
+colnames(ya_summ_geneVar_df) <- c("% BRAF:V600E", "% PIK3CA:H1047R", "% PIK3CA:E545K", "% PIK3CA:E542K", "% KRAS:G12V",
+                                  "% AKT1:E17K", "% KRAS:G13D", "% KRAS:G12C", "% IDH1:R132C", "% ERBB3:V104M", "cancer")
+
+ya_summ_geneVar_df = add_column(ya_summ_geneVar_df, young_adult_n, .before ="% BRAF:V600E")
+
+ya_summ_geneVar_df$cancer = as.character(ya_summ_geneVar_df$cancer)
+ya_summ_geneVar_df = ya_summ_geneVar_df[order(ya_summ_geneVar_df$cancer),]
+rownames(ya_summ_geneVar_df) <- ya_summ_geneVar_df$cancer
+ya_summ_geneVar_df$cancer = NULL
+
+colnames(ya_summ_geneVar_df)[1] = "Young adult cases"
+
+young_geneVar_table = kable(ya_summ_geneVar_df,"html",align="l") %>% kable_styling("striped",full_width = FALSE)
+
+young_geneVar_table
+
+##############################################################################################################################
+
+colnames(lo_summ_geneVar_df) <- c("% BRAF:V600E", "% PIK3CA:H1047R", "% PIK3CA:E545K", "% PIK3CA:E542K", "% KRAS:G12V",
+                                  "% AKT1:E17K", "% KRAS:G13D", "% KRAS:G12C", "% IDH1:R132C", "% ERBB3:V104M", "cancer")
+
+lo_summ_geneVar_df = add_column(lo_summ_geneVar_df, later_onset_n, .before ="% BRAF:V600E")
+
+lo_summ_geneVar_df$cancer = as.character(lo_summ_geneVar_df$cancer)
+lo_summ_geneVar_df = lo_summ_geneVar_df[order(lo_summ_geneVar_df$cancer),]
+rownames(lo_summ_geneVar_df) <- lo_summ_geneVar_df$cancer
+lo_summ_geneVar_df$cancer = NULL
+
+colnames(lo_summ_geneVar_df)[1] = "Later onset cases"
+
+later_geneVar_table = kable(lo_summ_geneVar_df,"html",align="l") %>% kable_styling("striped",full_width = FALSE)
+
+later_geneVar_table
