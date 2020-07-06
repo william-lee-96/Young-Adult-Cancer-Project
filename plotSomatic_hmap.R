@@ -88,7 +88,7 @@ for (cancer in unique(clin_merge_subtype_avail_complete$acronym)){
     
     if (cancer == "LGG") {sig_gene_vec = c("ATRX","EGFR","IDH1","TP53")}
     
-    if (cancer == "UCEC") {sig_gene_vec = c("ATRX","BRD7","CNBD1","CTNNB1","FLT3","LATS1","PTEN","SIN3A")}
+    if (cancer == "UCEC") {sig_gene_vec = c("ATRX","BRD7","CNBD1","CTNNB1","FLT3","LATS1","PTEN","RPS6KA3","SIN3A")}
     
     for (gene in sig_gene_vec) {
       
@@ -207,7 +207,7 @@ p = p + guides(fill=guide_colorbar(title="% UCEC"))
 #p = p + theme(legend.position = "top")
 p
 fn = 'out/UCEC_mut_subtype_heatmap.pdf'
-ggsave(fn,h=3, w=5.25,useDingbats=F)
+ggsave(fn,h=3.25, w=5.25,useDingbats=F)
 
 ################################# LGG HEATMAP #################################
 
@@ -329,7 +329,7 @@ p = p + guides(fill=guide_colorbar(title="# UCEC"))
 #p = p + theme(legend.position = "top")
 p
 fn = 'out/UCEC_mut_subtype_count_heatmap.pdf'
-ggsave(fn,h=3, w=5.25,useDingbats=F)
+ggsave(fn,h=3.25, w=5.25,useDingbats=F)
 
 ################################# LGG COUNT HEATMAP #################################
 
