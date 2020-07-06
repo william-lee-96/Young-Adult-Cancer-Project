@@ -1,5 +1,5 @@
-##### PathGermVar_YoungOnset_Assoc.R #####
 # William Lee
+# June 2020
 
 bdir = "~/Box/Huang_lab/manuscripts/YoungOnsetCancer/analysis/immune_features"
 setwd(bdir)
