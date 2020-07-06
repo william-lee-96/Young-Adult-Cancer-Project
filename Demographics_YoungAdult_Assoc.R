@@ -68,6 +68,20 @@ clin_merge_demo = clin_merge_demo[complete.cases(clin_merge_demo),]
 
 clin_merge_demo$age_at_initial_pathologic_diagnosis = as.numeric(clin_merge_demo$age_at_initial_pathologic_diagnosis)
 
+testing <- data.frame(matrix(ncol = 28, nrow = 0))
+colnames(testing) = colnames(clin_merge_demo)
+for (cancer in unique(clin_merge_demo$acronym)) {
+  
+  temp = clin_merge_demo[clin_merge_demo$acronym==cancer,]
+  
+  ya_cases = sum(temp$age_binary==TRUE)
+  lo_cases = sum(temp$age_binary==FALSE)
+  
+  if (ya_cases >= 40 & lo_cases >= 40) {
+    testing = rbind(testing,temp)
+  }
+}
+
 demo_table_df <- data.frame(matrix(ncol = 7, nrow = 0))
 colnames(demo_table_df) <- c("cancer","Sample_size","Female_ratio","Avg_onset_age","young_ct","reglr_ct","Young_adult_ratio")
 
@@ -127,14 +141,6 @@ demographics
 library(ggplot2)
 library(scales)
 
-# BRCA (multiple)
-# CESC (squamous vs adeno)
-# COAD (multiple)
-# HNSC (POS VS NEG)
-# LGG  (multiple)
-# SARC (multiple)
-# UCEC (multiple)
-
 clin_subtype_df = clin_merge_demo
 
 clin_subtype_df$plot_age[clin_subtype_df$age_binary==TRUE] = "<= 50"
@@ -146,6 +152,7 @@ clin_subtype_allgen = clin_subtype_df[clin_subtype_df$acronym=="COAD" | clin_sub
                                       clin_subtype_df$acronym=="LGG"  | clin_subtype_df$acronym=="SARC",]
 
 ##############################################################################################################################
+
 for (cancer in unique(clin_subtype_female$acronym)) {
   for (subt in unique(clin_subtype_female$SUBTYPE)) {
     
@@ -173,7 +180,9 @@ p = p + ylab(element_blank()) ###
 p
 fn = "out/Subtype_Female_hBarplotBinary_Percent.pdf"
 ggsave(fn, w=5, h=4, useDingbats=FALSE)
+
 ##############################################################################################################################
+
 for (cancer in unique(clin_subtype_allgen$acronym)) {
   for (subt in unique(clin_subtype_allgen$SUBTYPE)) {
     
@@ -273,17 +282,15 @@ CNV_seg_merge_df = CNV_seg_merge_df[CNV_seg_merge_df$acronym == "BRCA" | CNV_seg
                                     CNV_seg_merge_df$acronym == "SARC" | CNV_seg_merge_df$acronym == "SKCM" | 
                                     CNV_seg_merge_df$acronym == "THCA" | CNV_seg_merge_df$acronym == "UCEC",]
 
-p1 = ggplot(data=CNV_seg_merge_df,aes(x=plot_age,y=log10(CNV_segs),fill=plot_age))
+p1 = ggplot(data=CNV_seg_merge_df,aes(x=plot_age,y=log10(CNV_segs),fill=acronym))
 p1 = p1 + geom_violin(trim = TRUE)
 p1 = p1 + facet_grid( .~acronym, drop=T, space ="free", scale = "free")
-#p1 = p1 + geom_jitter(aes(color = plot_age), size=0.35, alpha=1)
-p1 = p1 + scale_x_discrete(drop=FALSE) #+ scale_y_discrete(drop=FALSE)
+p1 = p1 + scale_x_discrete(drop=FALSE) 
 p1 = p1 + ylab("log10(CNV segments)") + xlab("age at pathologic diagnosis (yrs.)")
-#p1 = p1 + stat_summary(fun.data=mean_sdl ,geom="pointrange", color="black")
 p1 = p1 + theme_bw()
-p1 = p1 + scale_fill_manual(values=c("<= 50" = "#00BFC4", "> 50" = "#F8766D"))
+p1 = p1 + getPCACancerFill() 
 p1 = p1 + theme(legend.position="none")
 p1 = p1 + stat_summary(fun = median, fun.min = median, fun.max = median, geom = "crossbar", width = 0.75)
 p1
 fn = 'out/YoungAdult_CNV_Segment_Violin.pdf'
-ggsave(fn,h=3.5, w=11.5,useDingbats=F)
+ggsave(fn,h=3, w=11.5,useDingbats=F)
