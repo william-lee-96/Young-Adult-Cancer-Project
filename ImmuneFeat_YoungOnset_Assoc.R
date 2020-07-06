@@ -1,9 +1,8 @@
 ##### ImmuneFeat_YoungOnset_Assoc.R #####
 # William Lee @ 2019
-# conduct association between immune features and young onset cancer (<50 or age as continuous variable)
-# load "readxl" and "tidyverse"
-# set working directory for dev and debug
+# Updated June 2020
 
+# set working directory for dev and debug
 bdir = "~/Box/Huang_lab/manuscripts/YoungOnsetCancer/analysis/immune_features"
 setwd(bdir)
 
@@ -122,15 +121,12 @@ for (cancer in unique(clin_merge_subtype_avail_complete$acronym)) {
           any(clin_merge_subtype_avail_complete_c_merge_if$age_binary) == FALSE) {next}
       
       else {
-      ## model onset age as a linear variable: TODO: add in gender as a covariate 
-      model_results = run_glm(data = clin_merge_subtype_avail_complete_c_merge_if, yi = immune_feat, xi = "age_at_initial_pathologic_diagnosis", ytype = "Continuous", covi = c("SUBTYPE","gender","PC1","PC2"))
-      cancer_stat = data.frame(cbind(cancer, immune_feat, model_results))
-      immune_results_list[[i]] = cancer_stat
-      # 
+        
       # model onset age as a binary variable
       model_results = run_glm(data = clin_merge_subtype_avail_complete_c_merge_if, yi = immune_feat, xi = "age_binary", ytype = "Continuous", covi = c("SUBTYPE","gender","PC1","PC2"))
       cancer_stat = data.frame(cbind(cancer, immune_feat, model_results))
       immune_results_list_binary[[i]] = cancer_stat
+      
       }
     }
     
