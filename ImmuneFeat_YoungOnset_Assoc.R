@@ -1,6 +1,5 @@
 ##### ImmuneFeat_YoungOnset_Assoc.R #####
-# William Lee @ 2019
-# Updated June 2020
+# William Lee @ September 2019, updated August 2020
 
 # set working directory for dev and debug
 bdir = "~/Box/Huang_lab/manuscripts/YoungOnsetCancer/analysis/immune_features"
@@ -60,9 +59,7 @@ nrow(clin_merge_subtype_avail_complete)
 cat("Cancer type distribution of TCGA cases with young onset cancer\n")
 table(clin_merge_subtype_avail_complete$age_at_initial_pathologic_diagnosis<=50,clin_merge_subtype_avail_complete$acronym)
 
-##### statistical testing: immune feature analysis within each cancer type #####
-# immune features ~ onset age + covariates ("gender","Subtype","PC1","PC2")
-
+# cleaning of merged df
 clin_merge_subtype_avail_complete$cancer = NULL
 clin_merge_subtype_avail_complete$ethnicity = NULL
 clin_merge_subtype_avail_complete$washu_assigned_ethnicity = NULL
@@ -74,23 +71,17 @@ clin_merge_subtype_avail_complete[ clin_merge_subtype_avail_complete == "[Not Av
 immune_results_list = as.list(NULL)
 immune_results_list_binary = as.list(NULL)
 i=1
-
 # conduct tests by each cancer (denoted as acronym)
 for (cancer in unique(clin_merge_subtype_avail_complete$acronym)) {
-  
-  if (cancer == "BRCA" | cancer == "CESC" | cancer == "COAD" | cancer == "HNSC" |
-      cancer == "KIRC" | cancer == "KIRP" | cancer == "LGG"  | cancer == "LIHC" |
-      cancer == "OV"   | cancer == "PCPG" | cancer == "SARC" | cancer == "SKCM" | 
-      cancer == "THCA" | cancer == "UCEC") {
   
   clin_merge_subtype_avail_complete_c = clin_merge_subtype_avail_complete[clin_merge_subtype_avail_complete$acronym==cancer,]
   clin_merge_subtype_avail_complete_c = clin_merge_subtype_avail_complete_c[complete.cases(clin_merge_subtype_avail_complete_c),]
   
+  if ((sum(clin_merge_subtype_avail_complete_c$age_binary==TRUE) >= 40) &
+      (sum(clin_merge_subtype_avail_complete_c$age_binary==FALSE) >= 40)) {
+  
   # conduct the test by immune feature
   for (immune_feat in immune_features) {
-  
-   # if (immune_feat != "OS" & immune_feat != "PFI" & immune_feat != "BCR_Evenness" & immune_feat != "BCR_Shannon" & immune_feat != "BCR_Richness" &
-   #     immune_feat != "TCR_Evenness" & immune_feat != "TCR_Shannon" & immune_feat != "TCR_Richness") {
     
    # if (immune_feat == "Th1_Cells" | immune_feat == "Th2_Cells" | immune_feat == "Th17_Cells") {
      

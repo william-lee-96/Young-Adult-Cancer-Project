@@ -1,5 +1,5 @@
-# William Lee
-# June 2020
+##### plotImmuneAssoc.R #####
+# William Lee @ September 2019, updated August 2020
 
 bdir = "~/Box/Huang_lab/manuscripts/YoungOnsetCancer/analysis/immune_features"
 setwd(bdir)
