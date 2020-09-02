@@ -1,6 +1,5 @@
 ##### YoungAdult_Amplification_Clin_Assoc.R #####
-# William Lee @ January 2020
-# Updated June 2020
+# William Lee @ January 2020, updated August 2020
 
 bdir = "~/Box/Huang_lab/manuscripts/YoungOnsetCancer/analysis/methylation_fusion"
 setwd(bdir)
@@ -75,7 +74,6 @@ setwd(bdir)
 
 # civic_raw_data updated 06/04/2020
 civic_raw_data = "01-May-2020-ClinicalEvidenceSummaries.tsv" # 3431 obs. of 41 variables
-# civic_raw_data = "01-Apr-2020-ClinicalEvidenceSummaries.tsv" # 3393 obs. of 41 variables
 civic_df = read.table(header=T, quote = "", sep="\t", fill=T, file = civic_raw_data, stringsAsFactors=FALSE)
 
 ### civic data preparation 
@@ -218,20 +216,16 @@ poten_clin_act_3db = as.data.frame(cbind(doid, drugs, ampEvnt, evidence_level, c
 unique_ampevnt_3db = unique(poten_clin_act_3db$ampEvnt)
 
 clin_amplification_therapeutics <- data.frame(matrix(ncol = 32, nrow = 0))
-colnames(clin_amplification_therapeutics) <- c("bcr_patient_barcode","acronym","age_at_initial_pathologic_diagnosis","gender",
-                                        "PC1","PC2","PC3","PC4","PC5","PC6","PC7","PC8","PC9","PC10","PC11","PC12","PC13","PC14","PC15","PC16","PC17","PC18","PC19","PC20","SAMPLE_BARCODE",
-                                        "DISEASE","SUBTYPE","age_binary","doid","amp_binary","ampEvnt","ab_drug")
+colnames(clin_amplification_therapeutics) <- colnames(clin_merge_subtype_avail_complete)
+colnames(clin_amplification_therapeutics)[30:32] <- c("amp_binary","ampEvnt","ab_drug")
 
-# for each cancer type
 for (cancer in unique(clin_merge_subtype_avail_complete$acronym)){
-  
-  if (cancer == "BRCA" | cancer == "CESC" | cancer == "COAD" | cancer == "HNSC" |
-      cancer == "KIRC" | cancer == "KIRP" | cancer == "LGG"  | cancer == "LIHC" |
-      cancer == "OV"   | cancer == "PCPG" | cancer == "SARC" | cancer == "SKCM" | 
-      cancer == "THCA" | cancer == "UCEC") {
     
     clin_merge_subtype_avail_complete_c = clin_merge_subtype_avail_complete[clin_merge_subtype_avail_complete$acronym==cancer,]
     clin_merge_subtype_avail_complete_c = clin_merge_subtype_avail_complete_c[complete.cases(clin_merge_subtype_avail_complete_c),]
+    
+    if ((sum(clin_merge_subtype_avail_complete_c$age_binary==TRUE) >= 40) &
+       (sum(clin_merge_subtype_avail_complete_c$age_binary==FALSE) >= 40)) {
     
     # conduct the test by each alteration event
     for (amp in amp_events){
@@ -280,9 +274,6 @@ for (cancer in unique(clin_merge_subtype_avail_complete$acronym)){
           
           if (elvl == "A" & (poten_clin_act_evnt[i, "clinical_significance"] == "Sensitivity/Response" |
                              poten_clin_act_evnt[i, "clinical_significance"] == "Responsive")) {
-          
-          # if (elvl == "A" & (poten_clin_act_evnt[i, "clinical_significance"] == "Resistance" |
-          #                    poten_clin_act_evnt[i, "clinical_significance"] == "Resistant")) {
             
             if (poten_clin_act_evnt[i, "doid"] == unique(clin_merge_subtype_avail_complete_c_merge_amp$doid)) {
               current_drug = paste(poten_clin_act_evnt[i, "drugs"], "A on-label", sep=": ")
@@ -300,9 +291,6 @@ for (cancer in unique(clin_merge_subtype_avail_complete$acronym)){
           
           else if (elvl == "B" & (poten_clin_act_evnt[i, "clinical_significance"] == "Sensitivity/Response" |
                                   poten_clin_act_evnt[i, "clinical_significance"] == "Responsive")) {
-          
-          # else if (elvl == "B" & (poten_clin_act_evnt[i, "clinical_significance"] == "Resistance" |
-          #                         poten_clin_act_evnt[i, "clinical_significance"] == "Resistant")) {
             
             if (poten_clin_act_evnt[i, "doid"] == unique(clin_merge_subtype_avail_complete_c_merge_amp$doid)) {
               current_drug = paste(poten_clin_act_evnt[i, "drugs"], "B on-label", sep=": ")
@@ -340,13 +328,7 @@ for (cancer in unique(clin_merge_subtype_avail_complete$acronym)){
   }
 }
 
-# get dfs for actionable ampEvnt analysis later (need duplicates) #
-clin_amplification_therapeutics_all = clin_amplification_therapeutics
-clin_amplification_therapeutics_all = clin_amplification_therapeutics_all[
-clin_amplification_therapeutics_all$acronym=="BRCA" | clin_amplification_therapeutics_all$acronym=="CESC" |
-clin_amplification_therapeutics_all$acronym=="HNSC" | clin_amplification_therapeutics_all$acronym=="LGG" |
-clin_amplification_therapeutics_all$acronym=="OV" | clin_amplification_therapeutics_all$acronym=="SKCM",]
-
+# get df for actionable ampEvnt analysis later (need duplicates) #
 clin_amplification_actionable = clin_amplification_therapeutics
 clin_amplification_actionable[clin_amplification_actionable == ""] <- NA
 clin_amplification_actionable = clin_amplification_actionable[!is.na(clin_amplification_actionable$ab_drug),]
@@ -354,12 +336,6 @@ clin_amplification_actionable = clin_amplification_actionable[
 clin_amplification_actionable$acronym=="BRCA" | clin_amplification_actionable$acronym=="CESC" |
 clin_amplification_actionable$acronym=="HNSC" | clin_amplification_actionable$acronym=="LGG" |
 clin_amplification_actionable$acronym=="OV" | clin_amplification_actionable$acronym=="SKCM",]
-          
-# RESPONSIVE VARIANTS #
-# clin_amplification_therapeutics: 3930 obs. before removing duplicates
-
-# RESISTANT VARIANTS #
-# clin_amplification_therapeutics: 3930 obs. before removing duplicates
 
 duplicated_patient_samples = clin_amplification_therapeutics[duplicated(clin_amplification_therapeutics$bcr_patient_barcode),1]
 
@@ -396,11 +372,29 @@ for (duplicate in duplicated_patient_samples) {
   
 }
 
-# RESPONSIVE VARIANTS #
-# clin_amplification_therapeutics: 1954 obs. after removing duplicates
+clin_merge_amp_temp = data.frame(matrix(ncol = 29, nrow = 0))
+colnames(clin_merge_amp_temp) <- colnames(clin_merge_subtype_avail_complete)
 
-# RESISTANT VARIANTS #
-# clin_amplification_therapeutics: 1954 obs. after removing duplicates
+for (cancer in unique(clin_merge_subtype_avail_complete$acronym)){
+  
+  temp = clin_merge_subtype_avail_complete[clin_merge_subtype_avail_complete$acronym==cancer,]
+  temp = temp[complete.cases(temp),]
+  
+  if (nrow(temp) >= 40) {
+    
+    clin_merge_amp_temp = rbind(clin_merge_amp_temp,temp)
+    
+  }
+}
+
+clin_merge_amp_temp["amp_binary"] = NA; clin_merge_amp_temp["ampEvnt"] = NA; clin_merge_amp_temp["ab_drug"] = NA
+
+for (barcode in clin_merge_amp_temp$bcr_patient_barcode) {
+  if (!(barcode %in% clin_amplification_therapeutics$bcr_patient_barcode)) {
+    clin_amplification_therapeutics = rbind(clin_amplification_therapeutics,
+                                            clin_merge_amp_temp[clin_merge_amp_temp$bcr_patient_barcode==barcode,])
+  }
+}
 
 ### the following code produces the ggplot-ready dataframe ###
 
@@ -439,23 +433,6 @@ for (cancer in unique(clin_amplification_therapeutics$acronym)){
   }
 }
 
-# RESPONSIVE VARIANTS #
-# clin_amplification_therapeutics_ggplot: 1374 obs. 
-
-# RESISTANT VARIANTS #
-# clin_amplification_therapeutics_ggplot: 963 obs. 
-
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-
 clin_amplification_therapeutics_ggplot$ab_drug[is.na(clin_amplification_therapeutics_ggplot$ab_drug)] = "None"
 
 clin_amplification_therapeutics_ggplot_rmNone = clin_amplification_therapeutics_ggplot[clin_amplification_therapeutics_ggplot$ab_drug!="None",]
@@ -463,63 +440,8 @@ clin_amplification_therapeutics_ggplot_None = clin_amplification_therapeutics_gg
 
 clin_amplification_therapeutics_ggplot$ab_drug = factor(clin_amplification_therapeutics_ggplot$ab_drug, levels=c("None", "B off-label", "B on-label", "A off-label", "A on-label"))
 
-clin_amplification_therapeutics_ggplot$plot_age[clin_amplification_therapeutics_ggplot$age_binary==TRUE] = "<= 50"
+clin_amplification_therapeutics_ggplot$plot_age[clin_amplification_therapeutics_ggplot$age_binary==TRUE] = "  50"
 clin_amplification_therapeutics_ggplot$plot_age[clin_amplification_therapeutics_ggplot$age_binary==FALSE] = "> 50"
-
-clin_amplification_therapeutics_ggplot_rmNone$plot_age[clin_amplification_therapeutics_ggplot_rmNone$age_binary==TRUE] = "<= 50"
-clin_amplification_therapeutics_ggplot_rmNone$plot_age[clin_amplification_therapeutics_ggplot_rmNone$age_binary==FALSE] = "> 50"
-
-clin_amplification_therapeutics_ggplot_None$plot_age[clin_amplification_therapeutics_ggplot_None$age_binary==TRUE] = "<= 50"
-clin_amplification_therapeutics_ggplot_None$plot_age[clin_amplification_therapeutics_ggplot_None$age_binary==FALSE] = "> 50"
-
-### Selects for top amplification events ###
-
-ampEvnt_list = list(); aeCount_list = list()
-
-for (ae in unique(clin_amplification_therapeutics_ggplot_rmNone$ampEvnt)) {
-  ampEvnt_list = append(ampEvnt_list, ae)
-  aeCount_list = append(aeCount_list, sum(clin_amplification_therapeutics_ggplot_rmNone$ampEvnt==ae))
-}
-
-ampEvnt_vec <- data.frame(matrix(unlist(ampEvnt_list),byrow=T),stringsAsFactors=FALSE)
-aeCount_vec <- data.frame(matrix(unlist(aeCount_list),byrow=T),stringsAsFactors=FALSE)
-
-temp = cbind(ampEvnt_vec, aeCount_vec)
-colnames(temp)[1] = "ampEvnt"
-colnames(temp)[2] = "aeCount"
-temp = temp[order(temp$aeCount, decreasing=T),]
-
-# RESPONSIVE VARIANTS #
-temp = temp[1:11,]
-
-# RESISTANT VARIANTS #
-#temp = temp[1:6,]
-
-for (ae in unique(clin_amplification_therapeutics_ggplot_rmNone$ampEvnt)) {
-  for (ae2 in unique(temp$ampEvnt)) {
-    if (ae == ae2) {
-      
-      clin_amplification_therapeutics_ggplot_rmNone$tempCol[clin_amplification_therapeutics_ggplot_rmNone$ampEvnt==ae] = "XXXXX"
-      
-    }
-  }
-}
-
-clin_amplification_therapeutics_ggplot_rmNone$ampEvnt[is.na(clin_amplification_therapeutics_ggplot_rmNone$tempCol)] = "other"
-clin_amplification_therapeutics_ggplot_rmNone$tempCol = NULL
-
-# Responsive variants #
-clin_amplification_therapeutics_ggplot_rmNone$ampEvnt = factor(clin_amplification_therapeutics_ggplot_rmNone$ampEvnt, levels=c(
-"CCND1:AMP", "ERBB2:AMP", "FGFR1:AMP", "EGFR:AMP", "CCND2:AMP", "CDK4:AMP",
-"MDM2:AMP", "KRAS:AMP", "MET:AMP", "CDK6:AMP", "FGFR2:AMP", "other"))
-
-# Resistant variants #
-# clin_amplification_therapeutics_ggplot_rmNone$ampEvnt = factor(clin_amplification_therapeutics_ggplot_rmNone$ampEvnt, levels=c(
-# "CCND1:AMP", "ERBB2:AMP", "MDM2:AMP", "BRAF:AMP", "KIT:AMP", "MET:AMP", "other"))
-
-library(scales)
-library(RColorBrewer)
-source("../global_aes_out.R")
 
 ################################ RESPONSIVE FIGURES ################################ 
 
@@ -527,30 +449,15 @@ source("../global_aes_out.R")
 p = ggplot(data=clin_amplification_therapeutics_ggplot, aes(x = plot_age, alpha = ab_drug))
 p = p + facet_wrap( .~acronym, drop=T,scale="fixed", nrow=1)
 p = p + geom_bar(position = "fill", fill = "dodgerblue4")
-p = p + labs(y = "cases with treatment option(s) (%)", alpha = "highest predicted\nactionability level") + theme_bw()
+p = p + labs(y = "cases with treatment option(s) (%)", x = "age at pathologic diagnosis (yrs.)",
+             alpha = "highest predicted\nactionability level") + theme_bw()
 p = p + scale_y_continuous(labels=percent)
 p = p + scale_alpha_manual(values=c("A on-label" = 1, "A off-label" = 0.7, "B on-label" = 0.35, "B off-label" = 0.1, "None" = 0),
                            breaks=c("A on-label", "A off-label", "B on-label", "B off-label"))
 p = p + theme(legend.position = "top")
-p = p + xlab(element_blank())
-p = p + theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank())
 p
 fn = "out/YoungAdult_Amplification_ClinAct_BarplotBinary_Percent.pdf"
 ggsave(fn, w=7, h=4, useDingbats=FALSE) ###
-
-###GGPLOT DRUG AMPEVNT PERCENT###
-p = ggplot(data=clin_amplification_therapeutics_ggplot_rmNone, aes(x = plot_age, fill = ampEvnt))
-p = p + facet_wrap( .~acronym, drop=T,scale="fixed", nrow=1)
-p = p + geom_bar(position = "fill")
-p = p + scale_fill_brewer(palette = "Paired")
-p = p + labs(y = "clinically druggable amp. events (%)", x = "age at pathologic diagnosis (yrs.)",
-             fill = "events with A\nor B level drug(s)") + theme_bw() ###
-p = p + scale_y_reverse(labels = scales::percent)
-p = p + theme(strip.background = element_blank(),strip.text.x = element_blank())
-p = p + theme(legend.position = "bottom")
-p
-fn = "out/YoungAdult_AmplificationDrug_AmpEvnt_BarplotBinary_Percent.pdf"
-ggsave(fn, w=7, h=4.5, useDingbats=FALSE)
 
 ###GGPLOT DRUG COUNT###
 p = ggplot(data=clin_amplification_therapeutics_ggplot, aes(x = plot_age, fill = ab_drug))
@@ -566,54 +473,7 @@ p
 fn = "out/YoungAdult_Amplification_ClinAct_BarplotBinary_Count.pdf"
 ggsave(fn, w=7, h=3.5, useDingbats=FALSE)
 
-################################ RESISTANT FIGURES ################################ 
-
-###GGPLOT RESISTANCE PERCENT###
-p = ggplot(data=clin_amplification_therapeutics_ggplot, aes(x = plot_age, alpha = ab_drug))
-p = p + facet_wrap( .~acronym, drop=T,scale="fixed", nrow=1)
-p = p + geom_bar(position = "fill", fill = "red")
-p = p + labs(y = "cases resistant to treatment(s) (%)", alpha = "highest\npredicted\nresistance\nlevel") + theme_bw()
-p = p + scale_y_continuous(labels=percent)
-p = p + scale_alpha_manual(values=c("A on-label" = 1, "A off-label" = 0.7, "B on-label" = 0.35, "B off-label" = 0.1, "None" = 0),
-                           breaks=c("A on-label", "A off-label", "B on-label", "B off-label"))
-p = p + theme(legend.position = "right")
-p = p + xlab(element_blank())
-p = p + theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank())
-p
-fn = "out/YoungAdult_Amplification_ClinResist_BarplotBinary_Percent.pdf"
-ggsave(fn, w=5.25, h=3.5, useDingbats=FALSE) ###
-
-###GGPLOT RESISTANCE GENEVAR PERCENT###
-p = ggplot(data=clin_amplification_therapeutics_ggplot_rmNone, aes(x = plot_age, fill = ampEvnt))
-p = p + facet_wrap( .~acronym, drop=T,scale="fixed", nrow=1)
-p = p + geom_bar(position = "fill")
-p = p + scale_fill_brewer(palette = "Paired")
-p = p + labs(y = "clinically resistant gene variants (%)", x = "age at pathologic diagnosis (yrs.)",
-             fill = "variants\nresistant\nto A or B\nlevel drug(s)") + theme_bw() ###
-p = p + scale_y_reverse(labels = scales::percent)
-p = p + theme(strip.background = element_blank(),strip.text.x = element_blank())
-p = p + theme(legend.position = "right")
-p
-fn = "out/YoungAdult_AmplificationResist_AmpEvnt_BarplotBinary_Percent.pdf"
-ggsave(fn, w=5.25, h=3.5, useDingbats=FALSE)
-
-###GGPLOT RESISTANCE COUNT###
-p = ggplot(data=clin_amplification_therapeutics_ggplot, aes(x = plot_age, fill = ab_drug))
-p = p + facet_wrap( .~acronym, drop=T,scale="fixed", nrow=1)
-p = p + geom_bar(position = "stack") 
-p = p + labs(fill = "highest predicted\nresistance level", y = "individual cases",
-             x = "age at pathologic diagnosis (yrs.)") + theme_bw()
-p = p + scale_fill_manual(values=c("None" = "lightslategray", "A on-label" = "dodgerblue1", "A off-label" = "seagreen3",
-                                   "B on-label" = "lightgoldenrod", "B off-label" = "lightcoral"),
-                          breaks=c("A on-label", "A off-label", "B on-label", "B off-label", "None"))
-p = p + theme(legend.position="top")
-p
-fn = "out/YoungAdult_Amplification_ClinResist_BarplotBinary_Count.pdf"
-ggsave(fn, w=4.5, h=3.5, useDingbats=FALSE)
-
 ################################ RESPONSIVE SUMMARY TABLES ################################
-
-library(kableExtra)
 
 ya_amplification_summ_df <- data.frame(matrix(ncol = 7, nrow = 0))
 lo_amplification_summ_df <- data.frame(matrix(ncol = 7, nrow = 0))
@@ -672,10 +532,6 @@ ya_amplification_summ_df$cancer = NULL
 
 colnames(ya_amplification_summ_df) <- c("Young adult cases","% A on-label","% A off-label","% B on-label","% B off-label", "% None")
 
-young_adult_table = kable(ya_amplification_summ_df,"html",align="l") %>% kable_styling("striped",full_width = FALSE)
-
-young_adult_table
-
 ##############################################################################################################################
 
 lo_amplification_summ_df$cancer = as.character(lo_amplification_summ_df$cancer)
@@ -684,10 +540,6 @@ rownames(lo_amplification_summ_df) <- lo_amplification_summ_df$cancer
 lo_amplification_summ_df$cancer = NULL
 
 colnames(lo_amplification_summ_df) <- c("Later onset cases","% A on-label","% A off-label","% B on-label","% B off-label", "% None")
-
-later_onset_table = kable(lo_amplification_summ_df,"html",align="l") %>% kable_styling("striped",full_width = FALSE)
-
-later_onset_table
 
 ################################ RESPONSIVE AMPEVNT TABLES ################################
 
@@ -710,25 +562,25 @@ temp = temp[1:10,]
 
 ###############################################
 
-ya_summ_ampEvnt_df <- data.frame(matrix(ncol = 12, nrow = 0))
-lo_summ_ampEvnt_df <- data.frame(matrix(ncol = 12, nrow = 0))
+summ_ampEvnt_df <- data.frame(matrix(ncol = 12, nrow = 0))
 
-young_adult_n = data.frame(matrix(ncol = 1, nrow = 0))
-later_onset_n = data.frame(matrix(ncol = 1, nrow = 0))
+young_adult_n = c()
+later_onset_n = c()
 
 amp_evnt_vec = c("CCND1:AMP", "FGFR1:AMP", "ERBB2:AMP", "EGFR:AMP", "MDM2:AMP",
                  "CCND2:AMP", "KRAS:AMP", "CDK4:AMP", "CDK6:AMP", "MET:AMP")
 
-for (cancer in unique(clin_amplification_therapeutics_all$acronym)) {
+clin_amplification_therapeutics_ggplot[is.na(clin_amplification_therapeutics_ggplot)] <- ""
 
-  current_cancer_df = clin_amplification_therapeutics_all[clin_amplification_therapeutics_all$acronym==cancer,]
+for (cancer in unique(clin_amplification_therapeutics_ggplot$acronym)) {
+  
+  current_cancer_df = clin_amplification_therapeutics_ggplot[clin_amplification_therapeutics_ggplot$acronym==cancer,]
   
   unique_cases = current_cancer_df[!duplicated(current_cancer_df$bcr_patient_barcode),]
   ya_sample_size = sum(unique_cases$age_binary==TRUE)
   lo_sample_size = sum(unique_cases$age_binary==FALSE)
   
-  ya_ampEvnt_row <- data.frame(matrix(ncol = 0, nrow = 1))
-  lo_ampEvnt_row <- data.frame(matrix(ncol = 0, nrow = 1))
+  ampEvnt_row <- data.frame(matrix(ncol = 0, nrow = 1))
   
   for (ampEvnt in amp_evnt_vec) {
     
@@ -738,54 +590,34 @@ for (cancer in unique(clin_amplification_therapeutics_all$acronym)) {
     ya_current_ampEvnt_perc = round((num_current_ampEvnt_yng/ya_sample_size)*100, digits=1)
     lo_current_ampEvnt_perc = round((num_current_ampEvnt_ltr/lo_sample_size)*100, digits=1)
     
-    ya_ampEvnt_row = cbind(ya_ampEvnt_row, ya_current_ampEvnt_perc)
-    lo_ampEvnt_row = cbind(lo_ampEvnt_row, lo_current_ampEvnt_perc)
+    current_ampEvnt_perc = paste(ya_current_ampEvnt_perc, lo_current_ampEvnt_perc, sep=" | ")
+    
+    ampEvnt_row = cbind(ampEvnt_row, current_ampEvnt_perc)
     
   }
   
-  young_adult_n = rbind(young_adult_n, ya_sample_size)
-  later_onset_n = rbind(later_onset_n, lo_sample_size)
+  young_adult_n = c(young_adult_n, ya_sample_size)
+  later_onset_n = c(later_onset_n, lo_sample_size)
   
-  ya_ampEvnt_row = cbind(ya_ampEvnt_row, cancer)
-  lo_ampEvnt_row = cbind(lo_ampEvnt_row, cancer)
+  ampEvnt_row = cbind(ampEvnt_row, cancer)
   
-  ya_summ_ampEvnt_df <- rbind(ya_summ_ampEvnt_df, ya_ampEvnt_row)
-  lo_summ_ampEvnt_df <- rbind(lo_summ_ampEvnt_df, lo_ampEvnt_row)
+  summ_ampEvnt_df <- rbind(summ_ampEvnt_df, ampEvnt_row)
   
 }
 
 ##############################################################################################################################
 
-colnames(ya_summ_ampEvnt_df) <- c("% CCND1:AMP", "% FGFR1:AMP", "% ERBB2:AMP", "% EGFR:AMP", "% MDM2:AMP",
-                                  "% CCND2:AMP", "% KRAS:AMP", "% CDK4:AMP", "% CDK6:AMP", "% MET:AMP", "cancer")
+colnames(summ_ampEvnt_df) <- c("% CCND1:AMP", "% FGFR1:AMP", "% ERBB2:AMP", "% EGFR:AMP", "% MDM2:AMP",
+                               "% CCND2:AMP", "% KRAS:AMP", "% CDK4:AMP", "% CDK6:AMP", "% MET:AMP", "cancer")
 
-ya_summ_ampEvnt_df = add_column(ya_summ_ampEvnt_df, young_adult_n, .before ="% CCND1:AMP")
+young_later_n = paste(young_adult_n, later_onset_n, sep=" | ")
 
-ya_summ_ampEvnt_df$cancer = as.character(ya_summ_ampEvnt_df$cancer)
-ya_summ_ampEvnt_df = ya_summ_ampEvnt_df[order(ya_summ_ampEvnt_df$cancer),]
-rownames(ya_summ_ampEvnt_df) <- ya_summ_ampEvnt_df$cancer
-ya_summ_ampEvnt_df$cancer = NULL
+summ_ampEvnt_df = add_column(summ_ampEvnt_df, young_later_n, .before ="% CCND1:AMP")
 
-colnames(ya_summ_ampEvnt_df)[1] = "Young adult cases"
+summ_ampEvnt_df$cancer = as.character(summ_ampEvnt_df$cancer)
+summ_ampEvnt_df = summ_ampEvnt_df[order(summ_ampEvnt_df$cancer),]
 
-young_ampEvnt_table = kable(ya_summ_ampEvnt_df,"html",align="l") %>% kable_styling("striped",full_width = FALSE)
+colnames(summ_ampEvnt_df)[1] = "Young adult cases | Later onset cases"
 
-young_ampEvnt_table
-
-##############################################################################################################################
-
-colnames(lo_summ_ampEvnt_df) <- c("% CCND1:AMP", "% FGFR1:AMP", "% ERBB2:AMP", "% EGFR:AMP", "% MDM2:AMP",
-                                  "% CCND2:AMP", "% KRAS:AMP", "% CDK4:AMP", "% CDK6:AMP", "% MET:AMP", "cancer")
-
-lo_summ_ampEvnt_df = add_column(lo_summ_ampEvnt_df, later_onset_n, .before ="% CCND1:AMP")
-
-lo_summ_ampEvnt_df$cancer = as.character(lo_summ_ampEvnt_df$cancer)
-lo_summ_ampEvnt_df = lo_summ_ampEvnt_df[order(lo_summ_ampEvnt_df$cancer),]
-rownames(lo_summ_ampEvnt_df) <- lo_summ_ampEvnt_df$cancer
-lo_summ_ampEvnt_df$cancer = NULL
-
-colnames(lo_summ_ampEvnt_df)[1] = "Later onset cases"
-
-later_ampEvnt_table = kable(lo_summ_ampEvnt_df,"html",align="l") %>% kable_styling("striped",full_width = FALSE)
-
-later_ampEvnt_table
+col_idx <- grep("cancer", names(summ_ampEvnt_df))
+summ_ampEvnt_df <- summ_ampEvnt_df[,c(col_idx,(1:ncol(summ_ampEvnt_df))[-col_idx])]
