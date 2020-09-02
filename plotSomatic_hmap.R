@@ -1,5 +1,5 @@
-# William Lee
-# May 2020
+##### plotSomatic_hmap.R #####
+# William Lee @ May 2020, updated August 2020
 
 bdir = "~/Box/Huang_lab/manuscripts/YoungOnsetCancer/analysis/somatic_mutation"
 setwd(bdir)
@@ -50,9 +50,7 @@ nrow(clin_merge_subtype_avail_complete)
 cat("Cancer type distribution of TCGA cases with young onset cancer\n")
 table(clin_merge_subtype_avail_complete$age_at_initial_pathologic_diagnosis<=50,clin_merge_subtype_avail_complete$acronym)
 
-##### statistical testing: pan-gene analysis within each cancer type #####
-# somatic mutation in driver genes ~ onset age + covariates ("gender","Subtype","PC1","PC2")
-
+# cleaning of merged df
 clin_merge_subtype_avail_complete$cancer = NULL
 clin_merge_subtype_avail_complete$ethnicity = NULL
 clin_merge_subtype_avail_complete$washu_assigned_ethnicity = NULL
@@ -61,16 +59,11 @@ clin_merge_subtype_avail_complete[ clin_merge_subtype_avail_complete == "NA" ] <
 clin_merge_subtype_avail_complete[ clin_merge_subtype_avail_complete == "[Not Available]"] <- NA
 
 clin_somatic_sig_sub <- data.frame(matrix(ncol = 28, nrow = 0))
-colnames(clin_somatic_sig_sub) <- c("bcr_patient_barcode", "acronym", "age_at_initial_pathologic_diagnosis", "gender",
-                                    "PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10", "PC11", "PC12",
-                                    "PC13", "PC14", "PC15", "PC16", "PC17", "PC18", "PC19", "PC20", "SAMPLE_BARCODE", "DISEASE",
-                                    "SUBTYPE", "age_binary")
+colnames(clin_somatic_sig_sub) <- colnames(clin_merge_subtype_avail_complete)
 
-clin_somatic_mut_ggplot <- data.frame(matrix(ncol = 35, nrow = 0))
-colnames(clin_somatic_mut_ggplot) <- c("bcr_patient_barcode", "acronym", "age_at_initial_pathologic_diagnosis", "gender",
-                                       "PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10", "PC11", "PC12",
-                                       "PC13", "PC14", "PC15", "PC16", "PC17", "PC18", "PC19", "PC20", "SAMPLE_BARCODE", "DISEASE",
-                                       "SUBTYPE", "age_binary", "Hugo_Symbol", "plot_age", "gene", "gene_m_stat")
+clin_somatic_mut_ggplot <- data.frame(matrix(ncol = 31, nrow = 0))
+colnames(clin_somatic_mut_ggplot) <- colnames(clin_merge_subtype_avail_complete)
+colnames(clin_somatic_mut_ggplot)[29:31] <-c("plot_age", "gene", "gene_m_stat")
 
 # for somatic analysis, we are just interested in BRCA, UCEC, & LGG
 for (cancer in unique(clin_merge_subtype_avail_complete$acronym)){
@@ -97,8 +90,7 @@ for (cancer in unique(clin_merge_subtype_avail_complete$acronym)){
       somatic_likelyfunctional_driver_g_uniq = somatic_likelyfunctional_driver_g[!duplicated(somatic_likelyfunctional_driver_g$bcr_patient_barcode),]
       clin_merge_subtype_avail_complete_c_merge_somatic = merge(clin_merge_subtype_avail_complete_c,somatic_likelyfunctional_driver_g_uniq, by= "bcr_patient_barcode", all.x=T, all.y = F)
       
-      # model whether the sample carry somatic mutation in the gene (Hugo Symbol is a standardized gene name)
-      # samples with mutations considered as 1, no mutations considered as 0
+      # check whether the sample carry somatic mutation in the gene (Hugo Symbol is a standardized gene name)
       clin_merge_subtype_avail_complete_c_merge_somatic$Hugo_Symbol[!is.na(clin_merge_subtype_avail_complete_c_merge_somatic$Hugo_Symbol)] = "MUT"
       clin_merge_subtype_avail_complete_c_merge_somatic$Hugo_Symbol[is.na(clin_merge_subtype_avail_complete_c_merge_somatic$Hugo_Symbol)] = "WT"
       
@@ -155,7 +147,7 @@ for (gmut in unique(BRCA_hmap$gene_m_stat)) {
 BRCA_hmap$subt_perc = round(BRCA_hmap$hmap_data*100, digits=1)
 
 # BRCA heatmap #
-p = ggplot(data=BRCA_hmap, mapping = aes(x = SUBTYPE, y = gene_m_stat, fill = subt_perc))
+p = ggplot(data=BRCA_hmap, mapping = aes(x = SUBTYPE, y = reorder(gene_m_stat,desc(gene_m_stat)), fill = subt_perc))
 p = p + facet_wrap( .~hmap_label, drop=T,scale="fixed", nrow=1)
 p = p + geom_tile()
 p = p + geom_text(aes(label=subt_perc),color="orangered",size=3.5)
@@ -194,7 +186,7 @@ for (gmut in unique(UCEC_hmap$gene_m_stat)) {
 UCEC_hmap$subt_perc = round(UCEC_hmap$hmap_data*100, digits=1)
 
 # UCEC heatmap #
-p = ggplot(data=UCEC_hmap, mapping = aes(x = SUBTYPE, y = gene_m_stat, fill = subt_perc))
+p = ggplot(data=UCEC_hmap, mapping = aes(x = SUBTYPE, y = reorder(gene_m_stat,desc(gene_m_stat)), fill = subt_perc))
 p = p + facet_wrap( .~hmap_label, drop=T,scale="fixed", nrow=1)
 p = p + geom_tile()
 p = p + geom_text(aes(label=subt_perc),color="orangered",size=3.5)
@@ -236,7 +228,7 @@ LGG_hmap$SUBTYPE[LGG_hmap$SUBTYPE=="IDHmut-codel"] = "IDHmut\n-codel"
 LGG_hmap$subt_perc = round(LGG_hmap$hmap_data*100, digits=1)
 
 # LGG heatmap #
-p = ggplot(data=LGG_hmap, mapping = aes(x = SUBTYPE, y = gene_m_stat, fill = subt_perc))
+p = ggplot(data=LGG_hmap, mapping = aes(x = SUBTYPE, y = reorder(gene_m_stat,desc(gene_m_stat)), fill = subt_perc))
 p = p + facet_wrap( .~hmap_label, drop=T,scale="fixed", nrow=1)
 p = p + geom_tile()
 p = p + geom_text(aes(label=subt_perc),color="orangered",size=3.5)
@@ -279,7 +271,7 @@ for (gmut in unique(BRCA_hmap$gene_m_stat)) {
 }
 
 # BRCA count heatmap #
-p = ggplot(data=BRCA_hmap, mapping = aes(x = SUBTYPE, y = gene_m_stat, fill = hmap_data))
+p = ggplot(data=BRCA_hmap, mapping = aes(x = SUBTYPE, y = reorder(gene_m_stat,desc(gene_m_stat)), fill = hmap_data))
 p = p + facet_wrap( .~hmap_label, drop=T,scale="fixed", nrow=1)
 p = p + geom_tile()
 p = p + geom_text(aes(label=hmap_data),color="orangered",size=3.5)
@@ -316,7 +308,7 @@ for (gmut in unique(UCEC_hmap$gene_m_stat)) {
 }
 
 # UCEC count heatmap #
-p = ggplot(data=UCEC_hmap, mapping = aes(x = SUBTYPE, y = gene_m_stat, fill = hmap_data))
+p = ggplot(data=UCEC_hmap, mapping = aes(x = SUBTYPE, y = reorder(gene_m_stat,desc(gene_m_stat)), fill = hmap_data))
 p = p + facet_wrap( .~hmap_label, drop=T,scale="fixed", nrow=1)
 p = p + geom_tile()
 p = p + geom_text(aes(label=hmap_data),color="orangered",size=3.5)
@@ -356,7 +348,7 @@ LGG_hmap$SUBTYPE[LGG_hmap$SUBTYPE=="IDHmut-non-codel"] = "IDHmut-non\n-codel"
 LGG_hmap$SUBTYPE[LGG_hmap$SUBTYPE=="IDHmut-codel"] = "IDHmut\n-codel"
 
 # LGG count heatmap #
-p = ggplot(data=LGG_hmap, mapping = aes(x = SUBTYPE, y = gene_m_stat, fill = hmap_data))
+p = ggplot(data=LGG_hmap, mapping = aes(x = SUBTYPE, y = reorder(gene_m_stat,desc(gene_m_stat)), fill = hmap_data))
 p = p + facet_wrap( .~hmap_label, drop=T,scale="fixed", nrow=1)
 p = p + geom_tile()
 p = p + geom_text(aes(label=hmap_data),color="orangered",size=3.5)

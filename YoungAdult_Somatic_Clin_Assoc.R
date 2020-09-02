@@ -1,6 +1,5 @@
 ##### YoungAdult_Somatic_Clin_Assoc.R #####
-# William Lee @ January 2020
-# Updated June 2020
+# William Lee @ January 2020, updated August 2020
 
 ### analytic pipeline ###
 
@@ -12,7 +11,6 @@ setwd(bdir)
 
 # civic_raw_data updated 06/04/2020
 civic_raw_data = "01-May-2020-ClinicalEvidenceSummaries.tsv" # 3431 obs. of 41 variables
-# civic_raw_data = "01-Apr-2020-ClinicalEvidenceSummaries.tsv" # 3393 obs. of 41 variables
 civic_df = read.table(header=T, quote = "", sep="\t", fill=T, file = civic_raw_data, stringsAsFactors=FALSE)
 
 ### civic data preparation 
@@ -222,20 +220,18 @@ clin_merge_subtype_avail_complete$doid[clin_merge_subtype_avail_complete$acronym
 unique_genevar_3db = unique(poten_clin_act_3db$geneVar)
 
 clin_somatic_therapeutics <- data.frame(matrix(ncol = 35, nrow = 0))
-colnames(clin_somatic_therapeutics) <- c("bcr_patient_barcode","acronym","age_at_initial_pathologic_diagnosis","gender",
-                                         "PC1","PC2","PC3","PC4","PC5","PC6","PC7","PC8","PC9","PC10","PC11","PC12","PC13","PC14","PC15","PC16","PC17","PC18","PC19","PC20","SAMPLE_BARCODE",
-                                         "DISEASE","SUBTYPE","age_binary","doid","Hugo_Symbol","Variant_Classification","Tumor_Sample_Barcode","HGVSp_Short","geneVar","ab_drug")
+colnames(clin_somatic_therapeutics) <- colnames(clin_merge_subtype_avail_complete)
+colnames(clin_amplification_therapeutics)[30:35] <- c("Hugo_Symbol","Variant_Classification","Tumor_Sample_Barcode",
+                                                      "HGVSp_Short","geneVar","ab_drug")
 
 # conduct tests by each cancer (denoted as acronym)
 for (cancer in unique(clin_merge_subtype_avail_complete$acronym)){
   
-  if (cancer == "BRCA" | cancer == "CESC" | cancer == "COAD" | cancer == "HNSC" |
-      cancer == "KIRC" | cancer == "KIRP" | cancer == "LGG"  | cancer == "LIHC" |
-      cancer == "OV"   | cancer == "PCPG" | cancer == "SARC" | cancer == "SKCM" | 
-      cancer == "THCA" | cancer == "UCEC") {
-    
     clin_merge_subtype_avail_complete_c = clin_merge_subtype_avail_complete[clin_merge_subtype_avail_complete$acronym==cancer,]
     clin_merge_subtype_avail_complete_c = clin_merge_subtype_avail_complete_c[complete.cases(clin_merge_subtype_avail_complete_c),]
+    
+    if ((sum(clin_merge_subtype_avail_complete_c$age_binary==TRUE) >= 40) &
+       (sum(clin_merge_subtype_avail_complete_c$age_binary==FALSE) >= 40)) {
     
     # conduct the test by gene
     for (gene in unique(somatic_likelyfunctional_driver$Hugo_Symbol)){
@@ -286,9 +282,6 @@ for (cancer in unique(clin_merge_subtype_avail_complete$acronym)){
           if (elvl == "A" & (poten_clin_act_var[i, "clinical_significance"] == "Sensitivity/Response" |
                              poten_clin_act_var[i, "clinical_significance"] == "Responsive")) {
             
-            # if (elvl == "A" & (poten_clin_act_var[i, "clinical_significance"] == "Resistance" |
-            #                    poten_clin_act_var[i, "clinical_significance"] == "Resistant")) {
-            
             if (poten_clin_act_var[i, "doid"] == unique(poten_clin_act_som$doid)) {
               current_drug = paste(poten_clin_act_var[i, "drugs"], "A on-label", sep=": ")
               current_list = append(current_list, current_drug)
@@ -305,9 +298,6 @@ for (cancer in unique(clin_merge_subtype_avail_complete$acronym)){
           
           else if (elvl == "B" & (poten_clin_act_var[i, "clinical_significance"] == "Sensitivity/Response" |
                                   poten_clin_act_var[i, "clinical_significance"] == "Responsive")) {
-            
-            # else if (elvl == "B" & (poten_clin_act_var[i, "clinical_significance"] == "Resistance" |
-            #                         poten_clin_act_var[i, "clinical_significance"] == "Resistant")) {
             
             if (poten_clin_act_var[i, "doid"] == unique(poten_clin_act_som$doid)) {
               current_drug = paste(poten_clin_act_var[i, "drugs"], "B on-label", sep=": ")
@@ -345,12 +335,6 @@ for (cancer in unique(clin_merge_subtype_avail_complete$acronym)){
 }
 
 # get dfs for actionable geneVar analysis later (need duplicates) #
-clin_somatic_therapeutics_all = clin_somatic_therapeutics
-clin_somatic_therapeutics_all = clin_somatic_therapeutics_all[clin_somatic_therapeutics_all$acronym=="BRCA" |
-clin_somatic_therapeutics_all$acronym=="CESC" | clin_somatic_therapeutics_all$acronym=="COAD" |
-clin_somatic_therapeutics_all$acronym=="HNSC" | clin_somatic_therapeutics_all$acronym=="SKCM" |
-clin_somatic_therapeutics_all$acronym=="THCA" | clin_somatic_therapeutics_all$acronym=="UCEC",]
-
 clin_somatic_actionable = clin_somatic_therapeutics
 clin_somatic_actionable[clin_somatic_actionable == ""] <- NA
 clin_somatic_actionable = clin_somatic_actionable[!is.na(clin_somatic_actionable$ab_drug),]
@@ -358,12 +342,6 @@ clin_somatic_actionable = clin_somatic_actionable[clin_somatic_actionable$acrony
 clin_somatic_actionable$acronym=="CESC" | clin_somatic_actionable$acronym=="COAD" |
 clin_somatic_actionable$acronym=="HNSC" | clin_somatic_actionable$acronym=="SKCM" |
 clin_somatic_actionable$acronym=="THCA" | clin_somatic_actionable$acronym=="UCEC",]
-
-# RESPONSIVE VARIANTS #
-# clin_somatic_therapeutics: 17523 obs. before removing duplicates
-
-# RESISTANT VARIANTS #
-# clin_somatic_therapeutics: 17523 obs. before removing duplicates
 
 duplicated_patient_samples = clin_somatic_therapeutics[duplicated(clin_somatic_therapeutics$bcr_patient_barcode),1]
 
@@ -400,11 +378,31 @@ for (duplicate in duplicated_patient_samples) {
   
 }
 
-# RESPONSIVE VARIANTS #
-# clin_somatic_therapeutics: 4665 obs. after removing duplicates
+clin_merge_som_temp = data.frame(matrix(ncol = 29, nrow = 0))
+colnames(clin_merge_som_temp) <- colnames(clin_merge_subtype_avail_complete)
 
-# RESISTANT VARIANTS #
-# clin_somatic_therapeutics: 4665 obs. after removing duplicates
+for (cancer in unique(clin_merge_subtype_avail_complete$acronym)){
+  
+  temp = clin_merge_subtype_avail_complete[clin_merge_subtype_avail_complete$acronym==cancer,]
+  temp = temp[complete.cases(temp),]
+  
+  if (nrow(temp) >= 40) {
+    
+    clin_merge_som_temp = rbind(clin_merge_som_temp,temp)
+    
+  }
+}
+
+clin_merge_som_temp["Hugo_Symbol"] = NA; clin_merge_som_temp["Variant_Classification"] = NA; clin_merge_som_temp["Tumor_Sample_Barcode"] = NA
+clin_merge_som_temp["HGVSp_Short"] = NA; clin_merge_som_temp["geneVar"] = NA; clin_merge_som_temp["ab_drug"] = NA
+
+
+for (barcode in clin_merge_som_temp$bcr_patient_barcode) {
+  if (!(barcode %in% clin_somatic_therapeutics$bcr_patient_barcode)) {
+    clin_somatic_therapeutics = rbind(clin_somatic_therapeutics,
+                                      clin_merge_som_temp[clin_merge_som_temp$bcr_patient_barcode==barcode,])
+  }
+}
 
 ### the following code produces the ggplot-ready dataframe ###
 
@@ -443,125 +441,28 @@ for (cancer in unique(clin_somatic_therapeutics$acronym)){
   }
 }
 
-# RESPONSIVE VARIANTS #
-# clin_somatic_therapeutics_ggplot: 3062 obs. 
-
-# RESISTANT VARIANTS #
-# clin_somatic_therapeutics_ggplot: ? obs. 
-
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-
 clin_somatic_therapeutics_ggplot$ab_drug[is.na(clin_somatic_therapeutics_ggplot$ab_drug)] = "None"
-
-clin_somatic_therapeutics_ggplot_rmNone = clin_somatic_therapeutics_ggplot[clin_somatic_therapeutics_ggplot$ab_drug!="None",]
-clin_somatic_therapeutics_ggplot_None = clin_somatic_therapeutics_ggplot[clin_somatic_therapeutics_ggplot$ab_drug=="None",]
 
 clin_somatic_therapeutics_ggplot$ab_drug = factor(clin_somatic_therapeutics_ggplot$ab_drug, levels=c("None", "B off-label", "B on-label", "A off-label", "A on-label"))
 
-clin_somatic_therapeutics_ggplot$plot_age[clin_somatic_therapeutics_ggplot$age_binary==TRUE] = "<= 50"
+clin_somatic_therapeutics_ggplot$plot_age[clin_somatic_therapeutics_ggplot$age_binary==TRUE] = "  50"
 clin_somatic_therapeutics_ggplot$plot_age[clin_somatic_therapeutics_ggplot$age_binary==FALSE] = "> 50"
-
-clin_somatic_therapeutics_ggplot_rmNone$plot_age[clin_somatic_therapeutics_ggplot_rmNone$age_binary==TRUE] = "<= 50"
-clin_somatic_therapeutics_ggplot_rmNone$plot_age[clin_somatic_therapeutics_ggplot_rmNone$age_binary==FALSE] = "> 50"
-
-clin_somatic_therapeutics_ggplot_None$plot_age[clin_somatic_therapeutics_ggplot_None$age_binary==TRUE] = "<= 50"
-clin_somatic_therapeutics_ggplot_None$plot_age[clin_somatic_therapeutics_ggplot_None$age_binary==FALSE] = "> 50"
-
-### Selects for top gene variants ###
-
-geneVar_list = list(); gvCount_list = list()
-
-for (gv in unique(clin_somatic_therapeutics_ggplot_rmNone$geneVar)) {
-  geneVar_list = append(geneVar_list, gv)
-  gvCount_list = append(gvCount_list, sum(clin_somatic_therapeutics_ggplot_rmNone$geneVar==gv))
-}
-
-geneVar_vec <- data.frame(matrix(unlist(geneVar_list),byrow=T),stringsAsFactors=FALSE)
-gvCount_vec <- data.frame(matrix(unlist(gvCount_list),byrow=T),stringsAsFactors=FALSE)
-
-temp = cbind(geneVar_vec, gvCount_vec)
-colnames(temp)[1] = "geneVar"
-colnames(temp)[2] = "gvCount"
-temp = temp[order(temp$gvCount, decreasing=T),]
-temp = temp[1:11,]
-
-for (gv in unique(clin_somatic_therapeutics_ggplot_rmNone$geneVar)) {
-  for (gv2 in unique(temp$geneVar)) {
-    if (gv == gv2) {
-      
-      clin_somatic_therapeutics_ggplot_rmNone$tempCol[clin_somatic_therapeutics_ggplot_rmNone$geneVar==gv] = "XXXXX"
-      
-    }
-  }
-}
-
-clin_somatic_therapeutics_ggplot_rmNone$geneVar[is.na(clin_somatic_therapeutics_ggplot_rmNone$tempCol)] = "other"
-clin_somatic_therapeutics_ggplot_rmNone$tempCol = NULL
-
-# Responsive variants #
-clin_somatic_therapeutics_ggplot_rmNone$geneVar = factor(clin_somatic_therapeutics_ggplot_rmNone$geneVar, levels=c(
-"BRAF:V600E", "PIK3CA:H1047R", "PIK3CA:E545K", "PIK3CA:E542K", "KRAS:G12V", "KRAS:G13D",
-"AKT1:E17K", "KRAS:G12C", "CTNNB1:S37C", "ERBB3:V104M", "IDH1:R132C", "other"))
-
-# Resistant variants #
-# clin_somatic_therapeutics_ggplot_rmNone$geneVar = factor(clin_somatic_therapeutics_ggplot_rmNone$geneVar, levels=c(
-# "BRAF:V600E", "PIK3CA:H1047R", "PIK3CA:E545K", "PIK3CA:E542K", "KRAS:G12D", "KRAS:G13D",
-# "KRAS:A146T", "KRAS:G12A", "KRAS:G12C", "KRAS:G12S", "NRAS:G12D", "other"))
-
-
-library(scales)
-library(RColorBrewer)
-source("../global_aes_out.R")
-
-#
-#
-#
-#
-#
 
 ################################ RESPONSIVE FIGURES ################################ 
 
 ###GGPLOT DRUG PERCENT###
 p = ggplot(data=clin_somatic_therapeutics_ggplot, aes(x = plot_age, alpha = ab_drug))
 p = p + facet_wrap( .~acronym, drop=T,scale="fixed", nrow=1)
-#p = p + facet_grid( .~acronym, drop=T,scale="free")
 p = p + geom_bar(position = "fill", fill = "dodgerblue4")
-p = p + labs(y = "cases with treatment option(s) (%)", #x = "age at pathologic diagnosis (yrs.)",
+p = p + labs(y = "cases with treatment option(s) (%)", x = "age at pathologic diagnosis (yrs.)",
              alpha = "highest predicted\nactionability level") + theme_bw()
 p = p + scale_y_continuous(labels=percent)
 p = p + scale_alpha_manual(values=c("A on-label" = 1, "A off-label" = 0.7, "B on-label" = 0.35, "B off-label" = 0.1, "None" = 0),
                            breaks=c("A on-label", "A off-label", "B on-label", "B off-label"))
 p = p + theme(legend.position = "top")
-p = p + xlab(element_blank())
-p = p + theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank())
 p
 fn = "out/YoungAdult_Somatic_ClinAct_BarplotBinary_Percent.pdf"
 ggsave(fn, w=7.5, h=4, useDingbats=FALSE) ###
-
-###GGPLOT DRUG GENEVAR PERCENT###
-p = ggplot(data=clin_somatic_therapeutics_ggplot_rmNone, aes(x = plot_age, fill = geneVar))
-p = p + facet_wrap( .~acronym, drop=T,scale="fixed", nrow=1)
-p = p + geom_bar(position = "fill")
-p = p + scale_fill_brewer(palette = "Paired")
-p = p + labs(y = "clinically druggable gene variants (%)", x = "age at pathologic diagnosis (yrs.)",
-             fill = "variants with A\nor B level drug(s)") + theme_bw() ###
-p = p + scale_y_reverse(labels = scales::percent)
-#p = p + scale_y_continuous(labels=percent)
-#p = p + xlab(element_blank()) ###
-p = p + theme(strip.background = element_blank(),strip.text.x = element_blank())
-p = p + theme(legend.position = "bottom")
-p
-fn = "out/YoungAdult_SomaticDrug_GeneVar_BarplotBinary_Percent.pdf"
-ggsave(fn, w=7.5, h=4.5, useDingbats=FALSE)
 
 ###GGPLOT DRUG COUNT###
 p = ggplot(data=clin_somatic_therapeutics_ggplot, aes(x = plot_age, fill = ab_drug))
@@ -577,58 +478,7 @@ p
 fn = "out/YoungAdult_Somatic_ClinAct_BarplotBinary_Count.pdf"
 ggsave(fn, w=7.5, h=3.5, useDingbats=FALSE)
 
-################################ RESISTANT FIGURES ################################ 
-
-###GGPLOT RESISTANCE PERCENT###
-p = ggplot(data=clin_somatic_therapeutics_ggplot, aes(x = plot_age, alpha = ab_drug))
-p = p + facet_wrap( .~acronym, drop=T,scale="fixed", nrow=1)
-#p = p + facet_grid( .~acronym, drop=T,scale="free")
-p = p + geom_bar(position = "fill", fill = "red")
-p = p + labs(y = "cases resistant to treatment(s) (%)", #x = "age at pathologic diagnosis (yrs.)",
-             alpha = "highest predicted\nactionability level") + theme_bw()
-p = p + scale_y_continuous(labels=percent)
-p = p + scale_alpha_manual(values=c("A on-label" = 1, "A off-label" = 0.7, "B on-label" = 0.35, "B off-label" = 0.1, "None" = 0),
-                           breaks=c("A on-label", "A off-label", "B on-label", "B off-label"))
-p = p + theme(legend.position = "top")
-p = p + xlab(element_blank())
-p = p + theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank())
-p
-fn = "out/YoungAdult_Somatic_ClinResist_BarplotBinary_Percent.pdf"
-ggsave(fn, w=7.5, h=4, useDingbats=FALSE) ###
-
-###GGPLOT RESISTANCE GENEVAR PERCENT###
-p = ggplot(data=clin_somatic_therapeutics_ggplot_rmNone, aes(x = plot_age, fill = geneVar))
-p = p + facet_wrap( .~acronym, drop=T,scale="fixed", nrow=1)
-p = p + geom_bar(position = "fill")
-p = p + scale_fill_brewer(palette = "Paired")
-p = p + labs(y = "clinically resistant gene variants (%)", x = "age at pathologic diagnosis (yrs.)",
-             fill = "variants resistant\nto A or B\nlevel drug(s)") + theme_bw() ###
-p = p + scale_y_reverse(labels = scales::percent)
-#p = p + scale_y_continuous(labels=percent)
-#p = p + xlab(element_blank()) ###
-p = p + theme(strip.background = element_blank(),strip.text.x = element_blank())
-p = p + theme(legend.position = "bottom")
-p
-fn = "out/YoungAdult_SomaticResist_GeneVar_BarplotBinary_Percent.pdf"
-ggsave(fn, w=7.5, h=4.5, useDingbats=FALSE)
-
-###GGPLOT RESISTANCE COUNT###
-p = ggplot(data=clin_somatic_therapeutics_ggplot, aes(x = plot_age, fill = ab_drug))
-p = p + facet_wrap( .~acronym, drop=T,scale="fixed", nrow=1)
-p = p + geom_bar(position = "stack") 
-p = p + labs(fill = "highest predicted\nactionability level", y = "individual cases",
-             x = "age at pathologic diagnosis (yrs.)") + theme_bw()
-p = p + scale_fill_manual(values=c("None" = "lightslategray", "A on-label" = "dodgerblue1", "A off-label" = "seagreen3",
-                                   "B on-label" = "lightgoldenrod", "B off-label" = "lightcoral"),
-                          breaks=c("A on-label", "A off-label", "B on-label", "B off-label", "None"))
-p = p + theme(legend.position="top")
-p
-fn = "out/YoungAdult_Somatic_ClinResist_BarplotBinary_Count.pdf"
-ggsave(fn, w=7.5, h=3.5, useDingbats=FALSE)
-
 ################################ RESPONSIVE SUMMARY TABLES ################################
-
-library(kableExtra)
 
 ya_somatic_summ_df <- data.frame(matrix(ncol = 7, nrow = 0))
 lo_somatic_summ_df <- data.frame(matrix(ncol = 7, nrow = 0))
@@ -687,10 +537,6 @@ ya_somatic_summ_df$cancer = NULL
 
 colnames(ya_somatic_summ_df) <- c("Young adult cases","% A on-label","% A off-label","% B on-label","% B off-label", "% None")
 
-young_adult_table = kable(ya_somatic_summ_df,"html",align="l") %>% kable_styling("striped",full_width = FALSE)
-
-young_adult_table
-
 ##############################################################################################################################
 
 lo_somatic_summ_df$cancer = as.character(lo_somatic_summ_df$cancer)
@@ -699,10 +545,6 @@ rownames(lo_somatic_summ_df) <- lo_somatic_summ_df$cancer
 lo_somatic_summ_df$cancer = NULL
 
 colnames(lo_somatic_summ_df) <- c("Later onset cases","% A on-label","% A off-label","% B on-label","% B off-label", "% None")
-
-later_onset_table = kable(lo_somatic_summ_df,"html",align="l") %>% kable_styling("striped",full_width = FALSE)
-
-later_onset_table
 
 ################################ RESPONSIVE GENEVAR TABLES ################################
 
@@ -724,26 +566,26 @@ temp = temp[1:10,]
 
 ###############################################
 
-ya_summ_geneVar_df <- data.frame(matrix(ncol = 12, nrow = 0))
-lo_summ_geneVar_df <- data.frame(matrix(ncol = 12, nrow = 0))
+summ_geneVar_df <- data.frame(matrix(ncol = 12, nrow = 0))
 
-young_adult_n = data.frame(matrix(ncol = 1, nrow = 0))
-later_onset_n = data.frame(matrix(ncol = 1, nrow = 0))
+young_adult_n = c()
+later_onset_n = c()
 
 gene_evnt_vec = c("BRAF:V600E", "PIK3CA:H1047R", "PIK3CA:E545K", "PIK3CA:E542K", "KRAS:G12V",
                   "AKT1:E17K", "KRAS:G13D", "KRAS:G12C", "IDH1:R132C", "ERBB3:V104M")
 
-for (cancer in unique(clin_somatic_therapeutics_all$acronym)) {
+clin_somatic_therapeutics_ggplot[is.na(clin_somatic_therapeutics_ggplot)] <- ""
+
+for (cancer in unique(clin_somatic_therapeutics_ggplot$acronym)) {
   
-  current_cancer_df = clin_somatic_therapeutics_all[clin_somatic_therapeutics_all$acronym==cancer,]
+  current_cancer_df = clin_somatic_therapeutics_ggplot[clin_somatic_therapeutics_ggplot$acronym==cancer,]
   
   unique_cases = current_cancer_df[!duplicated(current_cancer_df$bcr_patient_barcode),]
   ya_sample_size = sum(unique_cases$age_binary==TRUE)
   lo_sample_size = sum(unique_cases$age_binary==FALSE)
   
-  ya_geneVar_row <- data.frame(matrix(ncol = 0, nrow = 1))
-  lo_geneVar_row <- data.frame(matrix(ncol = 0, nrow = 1))
-  
+  geneVar_row <- data.frame(matrix(ncol = 0, nrow = 1))
+
   for (geneVar in gene_evnt_vec) {
     
     num_current_geneVar_yng = sum(current_cancer_df$age_binary==TRUE & current_cancer_df$geneVar==geneVar)
@@ -752,54 +594,34 @@ for (cancer in unique(clin_somatic_therapeutics_all$acronym)) {
     ya_current_geneVar_perc = round((num_current_geneVar_yng/ya_sample_size)*100, digits=1)
     lo_current_geneVar_perc = round((num_current_geneVar_ltr/lo_sample_size)*100, digits=1)
     
-    ya_geneVar_row = cbind(ya_geneVar_row, ya_current_geneVar_perc)
-    lo_geneVar_row = cbind(lo_geneVar_row, lo_current_geneVar_perc)
+    current_geneVar_perc = paste(ya_current_geneVar_perc, lo_current_geneVar_perc, sep=" | ")
     
+    geneVar_row = cbind(geneVar_row, current_geneVar_perc)
+
   }
   
-  young_adult_n = rbind(young_adult_n, ya_sample_size)
-  later_onset_n = rbind(later_onset_n, lo_sample_size)
+  young_adult_n = c(young_adult_n, ya_sample_size)
+  later_onset_n = c(later_onset_n, lo_sample_size)
   
-  ya_geneVar_row = cbind(ya_geneVar_row, cancer)
-  lo_geneVar_row = cbind(lo_geneVar_row, cancer)
-  
-  ya_summ_geneVar_df <- rbind(ya_summ_geneVar_df, ya_geneVar_row)
-  lo_summ_geneVar_df <- rbind(lo_summ_geneVar_df, lo_geneVar_row)
-  
+  geneVar_row = cbind(geneVar_row, cancer)
+
+  summ_geneVar_df <- rbind(summ_geneVar_df, geneVar_row)
+
 }
 
 ##############################################################################################################################
 
-colnames(ya_summ_geneVar_df) <- c("% BRAF:V600E", "% PIK3CA:H1047R", "% PIK3CA:E545K", "% PIK3CA:E542K", "% KRAS:G12V",
-                                  "% AKT1:E17K", "% KRAS:G13D", "% KRAS:G12C", "% IDH1:R132C", "% ERBB3:V104M", "cancer")
+colnames(summ_geneVar_df) <- c("% BRAF:V600E", "% PIK3CA:H1047R", "% PIK3CA:E545K", "% PIK3CA:E542K", "% KRAS:G12V",
+                               "% AKT1:E17K", "% KRAS:G13D", "% KRAS:G12C", "% IDH1:R132C", "% ERBB3:V104M", "cancer")
 
-ya_summ_geneVar_df = add_column(ya_summ_geneVar_df, young_adult_n, .before ="% BRAF:V600E")
+young_later_n = paste(young_adult_n, later_onset_n, sep=" | ")
 
-ya_summ_geneVar_df$cancer = as.character(ya_summ_geneVar_df$cancer)
-ya_summ_geneVar_df = ya_summ_geneVar_df[order(ya_summ_geneVar_df$cancer),]
-rownames(ya_summ_geneVar_df) <- ya_summ_geneVar_df$cancer
-ya_summ_geneVar_df$cancer = NULL
+summ_geneVar_df = add_column(summ_geneVar_df, young_later_n, .before ="% BRAF:V600E")
 
-colnames(ya_summ_geneVar_df)[1] = "Young adult cases"
+summ_geneVar_df$cancer = as.character(summ_geneVar_df$cancer)
+summ_geneVar_df = summ_geneVar_df[order(summ_geneVar_df$cancer),]
 
-young_geneVar_table = kable(ya_summ_geneVar_df,"html",align="l") %>% kable_styling("striped",full_width = FALSE)
+colnames(summ_geneVar_df)[1] = "Young adult cases | Later onset cases"
 
-young_geneVar_table
-
-##############################################################################################################################
-
-colnames(lo_summ_geneVar_df) <- c("% BRAF:V600E", "% PIK3CA:H1047R", "% PIK3CA:E545K", "% PIK3CA:E542K", "% KRAS:G12V",
-                                  "% AKT1:E17K", "% KRAS:G13D", "% KRAS:G12C", "% IDH1:R132C", "% ERBB3:V104M", "cancer")
-
-lo_summ_geneVar_df = add_column(lo_summ_geneVar_df, later_onset_n, .before ="% BRAF:V600E")
-
-lo_summ_geneVar_df$cancer = as.character(lo_summ_geneVar_df$cancer)
-lo_summ_geneVar_df = lo_summ_geneVar_df[order(lo_summ_geneVar_df$cancer),]
-rownames(lo_summ_geneVar_df) <- lo_summ_geneVar_df$cancer
-lo_summ_geneVar_df$cancer = NULL
-
-colnames(lo_summ_geneVar_df)[1] = "Later onset cases"
-
-later_geneVar_table = kable(lo_summ_geneVar_df,"html",align="l") %>% kable_styling("striped",full_width = FALSE)
-
-later_geneVar_table
+col_idx <- grep("cancer", names(summ_geneVar_df))
+summ_geneVar_df <- summ_geneVar_df[,c(col_idx,(1:ncol(summ_geneVar_df))[-col_idx])]
